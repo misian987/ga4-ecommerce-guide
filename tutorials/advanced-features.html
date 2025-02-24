@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Features - GA4 E-commerce Tracking Guide</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">GA4 E-commerce Guide</h1>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../index.html#tutorials">Tutorials</a></li>
+                <li><a href="../index.html#demo">Demo Store</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="tutorial-content">
+        <div class="container">
+            <h1>Expert Guide: Advanced E-commerce Features</h1>
+            
+            <section class="tutorial-section">
+                <h2>Enterprise E-commerce Architecture</h2>
+                <p>Advanced tracking requires a sophisticated architecture:</p>
+                <div class="code-block">
+                    <h3>System Architecture:</h3>
+                    <pre><code>E-commerce Tracking System
+├── Core Tracking Layer
+│   ├── Event Queue Manager
+│   ├── Data Validation
+│   ├── Error Recovery
+│   └── Performance Monitoring
+├── Business Logic Layer
+│   ├── Promotion Engine
+│   ├── User Segmentation
+│   ├── A/B Testing
+│   └── Custom Metrics
+├── Integration Layer
+│   ├── CRM Integration
+│   ├── Inventory System
+│   ├── Payment Gateway
+│   └── Marketing Tools
+└── Analytics Layer
+    ├── Real-time Analytics
+    ├── Custom Reports
+    ├── Data Export
+    └── Monitoring</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>1. Advanced Promotion Tracking System</h2>
+                <div class="code-block">
+                    <pre><code>// Enterprise Promotion Tracking System
+class PromotionTrackingSystem {
+    constructor() {
+        this.promotions = new Map();
+        this.impressionThreshold = 1000; // 1 second
+        this.visibilityThreshold = 0.5; // 50% visibility
+        this.observers = new Map();
+    }
+
+    init() {
+        this.setupPromotionObservers();
+        this.initializePromotionData();
+        this.setupEventDelegation();
+    }
+
+    setupPromotionObservers() {
+        document.querySelectorAll('[data-promo]').forEach(element => {
+            const observer = new IntersectionObserver(
+                (entries) => this.handlePromotionVisibility(entries),
+                {
+                    threshold: this.visibilityThreshold,
+                    rootMargin: '0px'
+                }
+            );
+            observer.observe(element);
+            this.observers.set(element, observer);
+        });
+    }
+
+    async handlePromotionVisibility(entries) {
+        for (const entry of entries) {
+            if (entry.isIntersecting) {
+                const promoElement = entry.target;
+                const promoData = await this.getPromotionData(promoElement);
+                
+                // Start impression timer
+                setTimeout(() => {
+                    if (this.isElementVisible(promoElement)) {
+                        this.trackPromotionView(promoData);
+                    }
+                }, this.impressionThreshold);
+            }
+        }
+    }
+
+    async trackPromotionView(promoData) {
+        try {
+            dataLayer.push({ ecommerce: null });
+            dataLayer.push({
+                event: "view_promotion",
+                ecommerce: {
+                    items: [{
+                        promotion_id: promoData.id,
+                        promotion_name: promoData.name,
+                        creative_name: promoData.creative,
+                        creative_slot: promoData.slot,
+                        location_id: promoData.location,
+                        // Advanced tracking parameters
+                        start_date: promoData.startDate,
+                        end_date: promoData.endDate,
+                        discount_type: promoData.discountType,
+                        discount_value: promoData.discountValue,
+                        customer_segment: promoData.targetSegment,
+                        campaign_id: promoData.campaignId,
+                        ab_test_id: promoData.abTestId,
+                        custom_metadata: {
+                            visibility_time: this.calculateVisibilityTime(promoData.id),
+                            screen_location: this.getScreenLocation(promoData.id),
+                            device_type: this.getDeviceType(),
+                            viewport_size: this.getViewportSize()
+                        }
+                    }]
+                },
+                // Context data
+                page_type: this.getPageType(),
+                user_segment: await this.getUserSegment(),
+                session_id: this.getSessionId()
+            });
+
+            // Track in real-time analytics
+            await this.updateRealTimeStats(promoData);
+
+        } catch (error) {
+            await this.handleTrackingError(error, 'view_promotion', promoData);
+        }
+    }
+
+    // Additional methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>2. Enhanced Refund System</h2>
+                <div class="code-block">
+                    <pre><code>// Enterprise Refund Tracking System
+class RefundTrackingSystem {
+    constructor() {
+        this.refundQueue = new PriorityQueue();
+        this.processingBatch = false;
+        this.batchSize = 10;
+        this.processInterval = 5000; // 5 seconds
+    }
+
+    async trackRefund(refundData) {
+        try {
+            // Validate refund data
+            await this.validateRefundData(refundData);
+
+            // Enqueue refund
+            this.refundQueue.enqueue(refundData);
+
+            // Process queue if not already processing
+            if (!this.processingBatch) {
+                await this.processRefundQueue();
+            }
+        } catch (error) {
+            await this.handleRefundError(error, refundData);
+        }
+    }
+
+    async processRefundQueue() {
+        this.processingBatch = true;
+
+        while (!this.refundQueue.isEmpty()) {
+            const batch = [];
+            
+            // Process up to batchSize refunds
+            while (batch.length < this.batchSize && !this.refundQueue.isEmpty()) {
+                batch.push(this.refundQueue.dequeue());
+            }
+
+            // Process batch
+            await Promise.all(batch.map(refund => this.processRefund(refund)));
+
+            // Wait before processing next batch
+            await new Promise(resolve => setTimeout(resolve, this.processInterval));
+        }
+
+        this.processingBatch = false;
+    }
+
+    async processRefund(refundData) {
+        // Update inventory
+        await this.updateInventory(refundData);
+
+        // Track refund in GA4
+        dataLayer.push({ ecommerce: null });
+        dataLayer.push({
+            event: "refund",
+            ecommerce: {
+                transaction_id: refundData.orderId,
+                value: refundData.refundAmount,
+                currency: refundData.currency,
+                items: this.formatRefundItems(refundData.items),
+                // Advanced tracking
+                refund_reason: refundData.reason,
+                refund_type: refundData.type,
+                shipping_refund: refundData.shippingRefund,
+                tax_refund: refundData.taxRefund,
+                processing_time: this.calculateProcessingTime(refundData),
+                custom_metadata: {
+                    customer_satisfaction: refundData.satisfaction,
+                    return_condition: refundData.condition,
+                    restock_status: refundData.restockStatus
+                }
+            },
+            // Business metrics
+            customer_lifetime_value: await this.getUpdatedLTV(refundData.customerId),
+            return_rate: await this.calculateReturnRate(refundData.customerId),
+            // Operational data
+            processing_agent: refundData.agentId,
+            processing_location: refundData.locationId,
+            approval_level: refundData.approvalLevel
+        });
+
+        // Update customer profile
+        await this.updateCustomerProfile(refundData);
+    }
+
+    // Additional methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>3. Advanced Custom Metrics System</h2>
+                <div class="code-block">
+                    <pre><code>// Enterprise Custom Metrics System
+class CustomMetricsSystem {
+    constructor() {
+        this.metrics = new Map();
+        this.calculationQueue = new Queue();
+        this.updateInterval = 60000; // 1 minute
+        this.maxQueueSize = 1000;
+    }
+
+    async registerMetric(metricConfig) {
+        const metric = new CustomMetric(metricConfig);
+        await metric.initialize();
+        this.metrics.set(metricConfig.id, metric);
+    }
+
+    async trackEvent(eventData) {
+        try {
+            // Update all relevant metrics
+            const updates = [];
+            for (const [id, metric] of this.metrics) {
+                if (metric.shouldTrack(eventData)) {
+                    updates.push(this.updateMetric(id, eventData));
+                }
+            }
+            await Promise.all(updates);
+
+            // Push to GA4 if queue is full or interval elapsed
+            if (this.shouldPushToGA4()) {
+                await this.pushMetricsToGA4();
+            }
+        } catch (error) {
+            await this.handleMetricError(error, eventData);
+        }
+    }
+
+    async pushMetricsToGA4() {
+        const metricData = await this.aggregateMetrics();
+        
+        dataLayer.push({
+            event: "custom_metrics",
+            metric_timestamp: Date.now(),
+            metrics: metricData,
+            // Context data
+            data_quality_score: this.calculateDataQuality(),
+            processing_latency: this.calculateLatency(),
+            system_health: this.getSystemHealth()
+        });
+    }
+
+    // Metric calculation methods
+    calculateCustomerMetrics(customer) {
+        return {
+            acquisition_cost: this.calculateCAC(customer),
+            lifetime_value: this.calculateLTV(customer),
+            churn_probability: this.predictChurn(customer),
+            next_purchase_probability: this.predictNextPurchase(customer)
+        };
+    }
+
+    calculateProductMetrics(product) {
+        return {
+            view_to_purchase_rate: this.calculateConversionRate(product),
+            profit_margin: this.calculateMargin(product),
+            inventory_turnover: this.calculateTurnover(product),
+            price_elasticity: this.calculatePriceElasticity(product)
+        };
+    }
+
+    calculateBusinessMetrics() {
+        return {
+            average_order_value: this.calculateAOV(),
+            customer_acquisition_cost: this.calculateAverageCAC(),
+            revenue_per_visitor: this.calculateRPV(),
+            customer_satisfaction_score: this.calculateCSAT()
+        };
+    }
+
+    // Additional methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>4. Real-time Product Impression Analytics</h2>
+                <div class="code-block">
+                    <pre><code>// Enterprise Product Impression System
+class ProductImpressionAnalytics {
+    constructor() {
+        this.impressionBuffer = new CircularBuffer(1000);
+        this.analyticsWorker = new Worker('analytics-worker.js');
+        this.realTimeMetrics = new RealTimeMetrics();
+    }
+
+    async trackProductImpression(product, context) {
+        try {
+            const impressionData = await this.enrichImpressionData(product, context);
+            
+            // Buffer the impression
+            this.impressionBuffer.push(impressionData);
+
+            // Real-time processing
+            await this.processRealTimeMetrics(impressionData);
+
+            // Track in GA4
+            dataLayer.push({ ecommerce: null });
+            dataLayer.push({
+                event: "view_item_list",
+                ecommerce: {
+                    item_list_id: context.listId,
+                    item_list_name: context.listName,
+                    items: [{
+                        item_id: product.id,
+                        item_name: product.name,
+                        item_brand: product.brand,
+                        item_category: product.category,
+                        price: product.price,
+                        index: context.position,
+                        // Enhanced tracking
+                        visibility_score: this.calculateVisibilityScore(product.id),
+                        impression_quality: this.calculateImpressionQuality(context),
+                        user_interest_score: await this.calculateUserInterest(product),
+                        recommendation_strength: this.calculateRecommendationStrength(product),
+                        custom_metadata: {
+                            list_type: context.type,
+                            placement_strategy: context.strategy,
+                            algorithm_version: context.algorithmVersion,
+                            personalization_factors: context.personalizationFactors
+                        }
+                    }]
+                },
+                // Analytics metadata
+                impression_timestamp: Date.now(),
+                session_depth: this.getSessionDepth(),
+                page_performance: this.getPagePerformanceMetrics(),
+                user_context: await this.getUserContext()
+            });
+
+        } catch (error) {
+            await this.handleImpressionError(error, product, context);
+        }
+    }
+
+    async processRealTimeMetrics(impressionData) {
+        // Update real-time metrics
+        this.realTimeMetrics.update({
+            impressions: 1,
+            uniqueProducts: new Set([impressionData.product.id]).size,
+            viewportCoverage: this.calculateViewportCoverage(impressionData),
+            userEngagement: await this.calculateUserEngagement(impressionData)
+        });
+
+        // Trigger real-time alerts if necessary
+        await this.checkRealTimeAlerts(this.realTimeMetrics.current);
+    }
+
+    // Additional methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>Production Best Practices</h2>
+                <ol>
+                    <li>Implement comprehensive error handling and recovery</li>
+                    <li>Use batch processing for high-volume events</li>
+                    <li>Implement real-time monitoring and alerting</li>
+                    <li>Optimize performance with buffering and queuing</li>
+                    <li>Maintain data quality with validation</li>
+                    <li>Use advanced debugging and logging</li>
+                    <li>Implement A/B testing capabilities</li>
+                    <li>Monitor system health and performance</li>
+                </ol>
+            </section>
+
+            <div class="tutorial-navigation">
+                <a href="core-events.html" class="btn-secondary">← Previous: Core Events</a>
+                <a href="../index.html" class="btn-primary">Complete Course →</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 GA4 E-commerce Guide. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html> 

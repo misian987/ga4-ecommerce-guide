@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - GA4 E-commerce Tracking Guide</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">GA4 E-commerce Guide</h1>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../index.html#tutorials">Tutorials</a></li>
+                <li><a href="../index.html#demo">Demo Store</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="tutorial-content">
+        <div class="container">
+            <h1>Expert Guide: Getting Started with GA4 and GTM</h1>
+            
+            <section class="tutorial-section">
+                <h2>Advanced Prerequisites</h2>
+                <ul>
+                    <li>Understanding of JavaScript and DOM manipulation</li>
+                    <li>Familiarity with data layer concepts</li>
+                    <li>Basic knowledge of HTTP/HTTPS protocols</li>
+                    <li>Experience with web development tools (Chrome DevTools, etc.)</li>
+                    <li>Understanding of cookies and client-side storage</li>
+                </ul>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>1. Enterprise GTM Architecture</h2>
+                <h3>1.1 Account Structure Best Practices</h3>
+                <ul>
+                    <li>Multi-environment setup (Dev/Stage/Prod)</li>
+                    <li>Workspace management for team collaboration</li>
+                    <li>Version control and change management</li>
+                    <li>User permissions and access control</li>
+                </ul>
+
+                <h3>1.2 Container Organization</h3>
+                <ul>
+                    <li>Folder structure for different tracking types</li>
+                    <li>Naming conventions</li>
+                    <li>Documentation standards</li>
+                    <li>Template management</li>
+                </ul>
+
+                <div class="code-block">
+                    <h3>Example Folder Structure:</h3>
+                    <pre><code>GTM Container
+├── 01_Page Tracking
+│   ├── Core Pages
+│   └── Dynamic Content
+├── 02_E-commerce
+│   ├── Product Views
+│   ├── Cart Actions
+│   └── Checkout Flow
+├── 03_User Interactions
+│   ├── Clicks
+│   └── Forms
+└── 04_Custom Events</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>2. Advanced GTM Implementation</h2>
+                <h3>2.1 Custom HTML Installation</h3>
+                <div class="code-block">
+                    <h3>High-Performance Async Loading:</h3>
+                    <pre><code>&lt;script&gt;
+// Create a performance mark
+performance.mark('gtm-start');
+
+// GTM initialization with error handling and performance tracking
+(function(w,d,s,l,i){
+    try {
+        w[l]=w[l]||[];
+        w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
+        var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),
+            dl=l!='dataLayer'?'&l='+l:'';
+        j.async=true;
+        j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+        j.onload = function() {
+            performance.mark('gtm-loaded');
+            performance.measure('GTM Load Time', 'gtm-start', 'gtm-loaded');
+        };
+        f.parentNode.insertBefore(j,f);
+    } catch(e) {
+        console.error('GTM Error:', e);
+        // Send error to monitoring service
+    }
+})(window,document,'script','dataLayer','GTM-XXXX');&lt;/script&gt;</code></pre>
+                </div>
+
+                <h3>2.2 Data Layer Initialization</h3>
+                <div class="code-block">
+                    <h3>Advanced Data Layer Setup:</h3>
+                    <pre><code>&lt;script&gt;
+// Initialize data layer with error handling and validation
+window.dataLayer = window.dataLayer || [];
+function gtag(){
+    try {
+        dataLayer.push(arguments);
+        validateDataLayerPush(arguments);
+    } catch(e) {
+        console.error('Data Layer Error:', e);
+        // Send error to monitoring service
+    }
+}
+
+// Data Layer validation function
+function validateDataLayerPush(args) {
+    if (args[0] === 'config') {
+        // Validate configuration parameters
+        validateConfigParams(args[1]);
+    } else if (args[0] === 'event') {
+        // Validate event parameters
+        validateEventParams(args[1], args[2]);
+    }
+}
+
+// Initialize with default configuration
+gtag('js', new Date());
+gtag('config', 'G-XXXXXXXX', {
+    send_page_view: true,
+    cookie_domain: 'auto',
+    cookie_flags: 'samesite=none;secure',
+    custom_map: {
+        'dimension1': 'user_type',
+        'dimension2': 'client_id'
+    }
+});&lt;/script&gt;</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>3. Advanced GA4 Configuration</h2>
+                <h3>3.1 Custom Dimensions and Metrics</h3>
+                <ul>
+                    <li>User-scoped dimensions</li>
+                    <li>Event-scoped dimensions</li>
+                    <li>Custom metrics for business KPIs</li>
+                    <li>Calculated metrics</li>
+                </ul>
+
+                <h3>3.2 Data Streams Configuration</h3>
+                <div class="code-block">
+                    <h3>Enhanced Measurement Settings:</h3>
+                    <pre><code>{
+  "measurement_id": "G-XXXXXXXX",
+  "enhanced_measurement": {
+    "page_view": true,
+    "page_change": true,
+    "outbound_click": true,
+    "scroll": true,
+    "site_search": {
+      "search_term_parameter": "q",
+      "refinement_parameters": ["category", "sort"]
+    },
+    "file_download": {
+      "extensions": ["pdf", "xlsx", "docx"]
+    }
+  }
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>4. Data Quality and Validation</h2>
+                <h3>4.1 Debugging Tools</h3>
+                <ul>
+                    <li>GA4 DebugView configuration</li>
+                    <li>Chrome DevTools for GTM debugging</li>
+                    <li>Data Layer monitoring</li>
+                    <li>Custom debugging scripts</li>
+                </ul>
+
+                <div class="code-block">
+                    <h3>Debug Console Implementation:</h3>
+                    <pre><code>// Advanced debugging utility
+const GTMDebug = {
+    init() {
+        this.originalPush = window.dataLayer.push;
+        window.dataLayer.push = (...args) => {
+            this.log(args);
+            return this.originalPush.apply(window.dataLayer, args);
+        };
+    },
+
+    log(args) {
+        console.group('GTM Debug');
+        console.log('Timestamp:', new Date().toISOString());
+        console.log('Data:', args);
+        this.validateData(args);
+        console.groupEnd();
+    },
+
+    validateData(args) {
+        // Implement validation logic
+    }
+};
+
+// Initialize debugging
+GTMDebug.init();</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>5. Performance Optimization</h2>
+                <h3>5.1 Load Time Optimization</h3>
+                <ul>
+                    <li>Async loading strategies</li>
+                    <li>Resource prioritization</li>
+                    <li>Tag firing rules optimization</li>
+                    <li>Custom HTML minification</li>
+                </ul>
+
+                <h3>5.2 Data Layer Performance</h3>
+                <div class="code-block">
+                    <h3>Optimized Data Layer Push:</h3>
+                    <pre><code>// Batch processing for multiple events
+const DataLayerQueue = {
+    queue: [],
+    batchSize: 5,
+    batchDelay: 1000,
+    timeout: null,
+
+    push(event) {
+        this.queue.push(event);
+        this.scheduleProcess();
+    },
+
+    scheduleProcess() {
+        if (this.timeout) clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => this.processQueue(), this.batchDelay);
+    },
+
+    processQueue() {
+        while (this.queue.length) {
+            const batch = this.queue.splice(0, this.batchSize);
+            batch.forEach(event => window.dataLayer.push(event));
+        }
+    }
+};</code></pre>
+                </div>
+            </section>
+
+            <div class="tutorial-navigation">
+                <a href="../index.html" class="btn-secondary">← Back to Home</a>
+                <a href="core-events.html" class="btn-primary">Next: Core Events →</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 GA4 E-commerce Guide. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html> 

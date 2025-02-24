@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Events - GA4 E-commerce Tracking Guide</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">GA4 E-commerce Guide</h1>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../index.html#tutorials">Tutorials</a></li>
+                <li><a href="../index.html#demo">Demo Store</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="tutorial-content">
+        <div class="container">
+            <h1>Expert Implementation: Core E-commerce Events</h1>
+            
+            <section class="tutorial-section">
+                <h2>Event Architecture Design</h2>
+                <p>Advanced implementation requires a well-structured event hierarchy:</p>
+                <div class="code-block">
+                    <h3>Event Taxonomy:</h3>
+                    <pre><code>E-commerce Events
+├── Product Interaction
+│   ├── view_item
+│   ├── view_item_list
+│   ├── select_item
+│   └── view_promotion
+├── Cart Management
+│   ├── add_to_cart
+│   ├── remove_from_cart
+│   └── view_cart
+├── Checkout Process
+│   ├── begin_checkout
+│   ├── add_shipping_info
+│   ├── add_payment_info
+│   └── purchase
+└── Post-Purchase
+    ├── refund
+    └── purchase_complete</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>1. Advanced Product Interaction Events</h2>
+                <h3>1.1 Enhanced view_item Implementation</h3>
+                <div class="code-block">
+                    <pre><code>// Advanced Product View Tracking
+class ProductViewTracker {
+    constructor() {
+        this.viewThreshold = 1000; // 1 second
+        this.productData = null;
+        this.viewTimer = null;
+        this.tracked = false;
+    }
+
+    init(productData) {
+        this.productData = productData;
+        this.setupIntersectionObserver();
+        this.setupEventListeners();
+    }
+
+    setupIntersectionObserver() {
+        const observer = new IntersectionObserver(
+            (entries) => this.handleIntersection(entries),
+            { threshold: 0.7 } // 70% visibility required
+        );
+        observer.observe(document.querySelector('.product-detail'));
+    }
+
+    handleIntersection(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !this.tracked) {
+                this.startViewTimer();
+            } else {
+                this.clearViewTimer();
+            }
+        });
+    }
+
+    startViewTimer() {
+        this.viewTimer = setTimeout(() => {
+            this.trackProductView();
+        }, this.viewThreshold);
+    }
+
+    clearViewTimer() {
+        if (this.viewTimer) {
+            clearTimeout(this.viewTimer);
+        }
+    }
+
+    trackProductView() {
+        if (this.tracked) return;
+        
+        dataLayer.push({ ecommerce: null });
+        dataLayer.push({
+            event: "view_item",
+            ecommerce: {
+                currency: "USD",
+                value: this.productData.price,
+                items: [{
+                    item_id: this.productData.id,
+                    item_name: this.productData.name,
+                    item_brand: this.productData.brand,
+                    item_category: this.productData.category,
+                    item_variant: this.productData.variant,
+                    price: this.productData.price,
+                    quantity: 1,
+                    // Advanced parameters
+                    discount: this.productData.discount,
+                    coupon: this.productData.coupon,
+                    item_list_name: this.getReferringList(),
+                    item_list_id: this.getReferringListId(),
+                    index: this.getProductPosition(),
+                    // Custom dimensions
+                    custom_dimensions: {
+                        inventory_status: this.productData.stockStatus,
+                        seller_rating: this.productData.sellerRating,
+                        review_count: this.productData.reviewCount
+                    }
+                }]
+            },
+            // Event-scoped custom dimensions
+            page_type: "product_detail",
+            user_segment: this.getUserSegment(),
+            recommendation_type: this.getRecommendationType()
+        });
+        
+        this.tracked = true;
+    }
+
+    getReferringList() {
+        // Implementation to get referring list
+        const urlParams = new URLSearchParams(document.referrer);
+        return urlParams.get('list') || 'direct_navigation';
+    }
+
+    // Additional helper methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>2. Cart Management with State Handling</h2>
+                <div class="code-block">
+                    <pre><code>// Advanced Cart State Management
+class CartStateManager {
+    constructor() {
+        this.cart = new Map();
+        this.pendingOperations = new Set();
+        this.retryAttempts = 3;
+        this.retryDelay = 1000;
+    }
+
+    async addToCart(product, quantity) {
+        const operationId = this.generateOperationId();
+        this.pendingOperations.add(operationId);
+
+        try {
+            // Optimistic UI update
+            this.updateLocalCart(product, quantity);
+            
+            // Track add_to_cart event
+            await this.trackAddToCart(product, quantity);
+            
+            // API call to backend
+            await this.syncWithBackend(product, quantity);
+            
+            this.pendingOperations.delete(operationId);
+        } catch (error) {
+            await this.handleError(error, 'add_to_cart', {
+                product,
+                quantity,
+                operationId
+            });
+        }
+    }
+
+    async trackAddToCart(product, quantity) {
+        dataLayer.push({ ecommerce: null });
+        dataLayer.push({
+            event: "add_to_cart",
+            ecommerce: {
+                currency: "USD",
+                value: product.price * quantity,
+                items: [{
+                    item_id: product.id,
+                    item_name: product.name,
+                    item_brand: product.brand,
+                    item_category: product.category,
+                    price: product.price,
+                    quantity: quantity,
+                    // Advanced tracking
+                    inventory_status: product.stockStatus,
+                    seller_id: product.sellerId,
+                    promotion_id: this.getActivePromotion(product.id),
+                    discount: this.calculateDiscount(product),
+                    variant: product.selectedVariant,
+                    custom_metadata: {
+                        added_from: this.getAddSource(),
+                        recommendation_type: this.getRecommendationType(),
+                        ab_test_group: this.getABTestGroup()
+                    }
+                }]
+            },
+            cart_total: this.calculateCartTotal(),
+            cart_size: this.cart.size,
+            user_segment: this.getUserSegment()
+        });
+    }
+
+    calculateDiscount(product) {
+        // Complex discount calculation logic
+        const basePrice = product.basePrice;
+        const currentPrice = product.price;
+        const volumeDiscount = this.getVolumeDiscount(product);
+        const memberDiscount = this.getMemberDiscount(product);
+        const promoDiscount = this.getPromotionDiscount(product);
+        
+        return {
+            total_discount: basePrice - currentPrice,
+            volume_discount: volumeDiscount,
+            member_discount: memberDiscount,
+            promo_discount: promoDiscount
+        };
+    }
+
+    // Additional helper methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>3. Advanced Checkout Tracking</h2>
+                <div class="code-block">
+                    <pre><code>// Comprehensive Checkout Tracking
+class CheckoutTracker {
+    constructor() {
+        this.checkoutSteps = new Map([
+            ['begin_checkout', 1],
+            ['add_shipping_info', 2],
+            ['add_payment_info', 3],
+            ['purchase', 4]
+        ]);
+        this.currentStep = 0;
+        this.sessionData = {};
+    }
+
+    async trackCheckoutStep(step, data) {
+        if (!this.checkoutSteps.has(step)) {
+            throw new Error(`Invalid checkout step: ${step}`);
+        }
+
+        try {
+            await this.validateCheckoutData(step, data);
+            await this.trackStepEvent(step, data);
+            this.updateCheckoutState(step, data);
+        } catch (error) {
+            await this.handleTrackingError(error, step, data);
+        }
+    }
+
+    async trackStepEvent(step, data) {
+        const baseEventData = {
+            event: step,
+            ecommerce: {
+                currency: data.currency || 'USD',
+                value: this.calculateValue(data),
+                items: this.formatItems(data.items),
+                // Step-specific data
+                ...this.getStepSpecificData(step, data)
+            },
+            checkout_step: this.checkoutSteps.get(step),
+            checkout_option: data.option,
+            user_data: this.getUserData(),
+            custom_dimensions: {
+                checkout_type: data.type || 'standard',
+                payment_method: data.paymentMethod,
+                shipping_tier: data.shippingTier,
+                coupon_applied: !!data.couponCode,
+                checkout_errors: this.getCheckoutErrors()
+            }
+        };
+
+        // Add purchase-specific data
+        if (step === 'purchase') {
+            baseEventData.ecommerce = {
+                ...baseEventData.ecommerce,
+                transaction_id: data.transactionId,
+                tax: data.tax,
+                shipping: data.shipping,
+                payment_type: data.paymentType,
+                coupon: data.couponCode
+            };
+        }
+
+        dataLayer.push({ ecommerce: null });
+        dataLayer.push(baseEventData);
+    }
+
+    formatItems(items) {
+        return items.map(item => ({
+            item_id: item.id,
+            item_name: item.name,
+            item_brand: item.brand,
+            item_category: item.category,
+            price: item.price,
+            quantity: item.quantity,
+            // Enhanced item data
+            variant: item.variant,
+            discount: item.discount,
+            coupon: item.coupon,
+            seller_id: item.sellerId,
+            inventory_status: item.stockStatus,
+            custom_metadata: {
+                gift_wrap: item.giftWrap,
+                personalization: item.personalization,
+                warranty: item.warranty
+            }
+        }));
+    }
+
+    // Additional helper methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>4. Error Handling and Recovery</h2>
+                <div class="code-block">
+                    <pre><code>// Robust Error Handling System
+class TrackingErrorHandler {
+    constructor() {
+        this.errorQueue = [];
+        this.maxRetries = 3;
+        this.backoffMultiplier = 1.5;
+    }
+
+    async handleError(error, eventType, eventData) {
+        const errorEvent = {
+            timestamp: Date.now(),
+            type: error.name,
+            message: error.message,
+            eventType,
+            eventData,
+            retryCount: 0
+        };
+
+        this.logError(errorEvent);
+        await this.attemptRecovery(errorEvent);
+    }
+
+    async attemptRecovery(errorEvent) {
+        while (errorEvent.retryCount < this.maxRetries) {
+            try {
+                await this.retryEvent(errorEvent);
+                this.logRecovery(errorEvent);
+                return;
+            } catch (retryError) {
+                errorEvent.retryCount++;
+                await this.wait(
+                    this.calculateBackoff(errorEvent.retryCount)
+                );
+            }
+        }
+
+        this.handleUnrecoverableError(errorEvent);
+    }
+
+    calculateBackoff(retryCount) {
+        return Math.pow(this.backoffMultiplier, retryCount) * 1000;
+    }
+
+    // Additional error handling methods...
+}</code></pre>
+                </div>
+            </section>
+
+            <section class="tutorial-section">
+                <h2>Best Practices for Production</h2>
+                <ol>
+                    <li>Implement robust error handling and recovery mechanisms</li>
+                    <li>Use batch processing for multiple events</li>
+                    <li>Validate data before pushing to dataLayer</li>
+                    <li>Implement retry logic for failed tracking attempts</li>
+                    <li>Monitor tracking performance and errors</li>
+                    <li>Maintain consistent naming conventions</li>
+                    <li>Document custom implementations thoroughly</li>
+                </ol>
+            </section>
+
+            <div class="tutorial-navigation">
+                <a href="getting-started.html" class="btn-secondary">← Previous: Getting Started</a>
+                <a href="advanced-features.html" class="btn-primary">Next: Advanced Features →</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 GA4 E-commerce Guide. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html> 
