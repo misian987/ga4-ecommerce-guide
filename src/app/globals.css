@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+}
+
+@layer base {
+  body {
+    @apply text-gray-900 antialiased;
+  }
+  
+  h1 {
+    @apply text-4xl font-bold mb-6;
+  }
+  
+  h2 {
+    @apply text-3xl font-semibold mb-4;
+  }
+  
+  h3 {
+    @apply text-2xl font-semibold mb-3;
+  }
+  
+  h4 {
+    @apply text-xl font-semibold mb-2;
+  }
+  
+  p {
+    @apply mb-4;
+  }
+  
+  code {
+    @apply px-1.5 py-0.5 rounded bg-gray-100 font-mono text-sm;
+  }
+  
+  pre {
+    @apply p-4 rounded-lg bg-gray-100 overflow-x-auto;
+  }
+} 
